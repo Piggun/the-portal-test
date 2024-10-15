@@ -17,7 +17,8 @@ fs.createReadStream(path)
   })
   .on("end", () => {
     const summedProducts = aggregateProducts(products);
-    console.log(summedProducts);
+    const sortedProducts = sortProducts(summedProducts);
+    console.log(sortedProducts);
   });
 
 function aggregateProducts(products) {
@@ -26,15 +27,32 @@ function aggregateProducts(products) {
 
   for (const product of products) {
     const id = product["product_code"];
-    // If the product already exists
+    // If the product already exists increase its quantity
     if (aggregatedProductsMap[id]) {
       aggregatedProductsMap[id].quantity += product.quantity;
     } else {
-      aggregatedProductsMap[id] = product;
+      aggregatedProductsMap[id] = { ...product };
     }
   }
   for (const id in aggregatedProductsMap) {
     aggregatedProducts.push(aggregatedProductsMap[id]);
   }
   return aggregatedProducts;
+}
+
+function sortProducts(products) {
+  products.sort((a, b) => {
+    // if bays are the same, order by shelf number
+    if (a.bay.localeCompare(b.bay) === 0) {
+      return a.shelf - b.shelf;
+    }
+    // if bays have the same amount of characters, order alphabetically
+    if (a.bay.length === b.bay.length) {
+      return a.bay.localeCompare(b.bay);
+    }
+    // order by bays with less characters first
+    return a.bay.length - b.bay.length;
+  });
+
+  return products;
 }
