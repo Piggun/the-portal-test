@@ -1,6 +1,7 @@
 const csv = require("csv-parser");
 const fs = require("fs");
 const path = "hb_test.csv";
+const ObjectsToCsv = require("objects-to-csv");
 
 let products = [];
 
@@ -16,9 +17,9 @@ fs.createReadStream(path)
     });
   })
   .on("end", () => {
-    const summedProducts = aggregateProducts(products);
-    const sortedProducts = sortProducts(summedProducts);
-    console.log(sortedProducts);
+    const aggregatedProducts = aggregateProducts(products);
+    const sortedProducts = sortProducts(aggregatedProducts);
+    writeDataToCsv(sortedProducts);
   });
 
 function aggregateProducts(products) {
@@ -55,4 +56,20 @@ function sortProducts(products) {
   });
 
   return products;
+}
+
+async function writeDataToCsv(products) {
+  // format data for CSV output
+  const data = products.map((product) => ({
+    product_code: product.product_code,
+    quantity: product.quantity,
+    pick_location: `${product.bay} ${product.shelf}`,
+  }));
+
+  const outputFilename = "output.csv";
+  const objToCsv = new ObjectsToCsv(data);
+  await objToCsv.toDisk(`./${outputFilename}`);
+  console.log(
+    `Your products have been successfully sorted into ${outputFilename}!`
+  );
 }
