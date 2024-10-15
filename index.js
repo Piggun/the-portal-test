@@ -21,15 +21,20 @@ fs.createReadStream(path)
   });
 
 function aggregateProducts(products) {
-  const aggregatedProducts = {};
+  const aggregatedProducts = [];
+  const aggregatedProductsMap = {};
+
   for (const product of products) {
-    const key = product["product_code"];
+    const id = product["product_code"];
     // If the product already exists
-    if (aggregatedProducts[key]) {
-      aggregatedProducts[key].quantity += product.quantity;
+    if (aggregatedProductsMap[id]) {
+      aggregatedProductsMap[id].quantity += product.quantity;
     } else {
-      aggregatedProducts[key] = product;
+      aggregatedProductsMap[id] = product;
     }
+  }
+  for (const id in aggregatedProductsMap) {
+    aggregatedProducts.push(aggregatedProductsMap[id]);
   }
   return aggregatedProducts;
 }
