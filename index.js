@@ -5,41 +5,42 @@ const ObjectsToCsv = require("objects-to-csv");
 const inputFilePath = "hb_test.csv";
 const outputFilePath = "output.csv";
 
-let products = [];
+function processCsv() {
+  let products = [];
 
-if (!fs.existsSync(inputFilePath)) {
-  throw new Error(`Error: ${inputFilePath} does not exist`);
-}
+  if (!fs.existsSync(inputFilePath)) {
+    throw new Error(`Error: ${inputFilePath} does not exist`);
+  }
 
-fs.createReadStream(inputFilePath)
-  .pipe(csv())
-  .on("data", (row) => {
-    const [bay, shelf] = row.pick_location.split(" ");
-    products.push({
-      product_code: row.product_code,
-      quantity: Number(row.quantity),
-      bay: bay,
-      shelf: shelf,
+  fs.createReadStream(inputFilePath)
+    .pipe(csv())
+    .on("data", (row) => {
+      const [bay, shelf] = row.pick_location.split(" ");
+      products.push({
+        product_code: row.product_code,
+        quantity: Number(row.quantity),
+        bay: bay,
+        shelf: shelf,
+      });
+    })
+    .on("end", () => {
+      if (products.length === 0) {
+        throw new Error(`Error: there are no products to process`);
+      }
+
+      const aggregatedProducts = aggregateProducts(products);
+      const sortedProducts = sortProducts(aggregatedProducts);
+      writeDataToCsv(sortedProducts);
+    })
+    .on("error", (error) => {
+      throw new Error(`Error reading CSV file: ${error}`);
     });
-  })
-  .on("end", () => {
-    if (products.length === 0) {
-      throw new Error(`Error: there are no products to process`);
-    }
-
-    const aggregatedProducts = aggregateProducts(products);
-    const sortedProducts = sortProducts(aggregatedProducts);
-    writeDataToCsv(sortedProducts);
-  })
-  .on("error", (error) => {
-    throw new Error(`Error reading CSV file: ${error}`);
-  });
+}
 
 function aggregateProducts(products) {
   try {
     const aggregatedProducts = [];
     const aggregatedProductsMap = {};
-
     for (const product of products) {
       const id = product["product_code"];
       // If the product already exists increase its quantity
@@ -54,7 +55,7 @@ function aggregateProducts(products) {
     }
     return aggregatedProducts;
   } catch (error) {
-    throw new Error(`Error aggregating products : ${error}`);
+    throw new Error(`Error aggregating products: ${error}`);
   }
 }
 
@@ -97,3 +98,14 @@ async function writeDataToCsv(products) {
     throw new Error(`Error writing data to CSV: ${error}`);
   }
 }
+
+if (require.main === module) {
+  processCsv();
+}
+
+module.exports = {
+  aggregateProducts,
+  sortProducts,
+  processCsv,
+  writeDataToCsv,
+};
